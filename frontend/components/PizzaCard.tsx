@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { normalizeImageUrl } from '@/lib/utils';
 import type { Pizza } from '@/lib/mockData';
 
 interface PizzaCardProps {
@@ -15,13 +16,14 @@ interface PizzaCardProps {
 export function PizzaCard({ pizza, onCustomize }: PizzaCardProps) {
   const rating = pizza.rating || 4.5;
   const reviews = pizza.reviews || 0;
+  const imageUrl = normalizeImageUrl(pizza.image);
 
   return (
     <div className="group rounded-lg overflow-hidden bg-card shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
       <div className="relative h-40 overflow-hidden bg-muted">
         {pizza.image ? (
           <img
-            src={pizza.image}
+            src={imageUrl}
             alt={pizza.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

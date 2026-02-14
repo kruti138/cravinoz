@@ -1,15 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { prisma } from './db';
 
 dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 
+// Serve static uploads folder
+const uploadsPath = path.join(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsPath));
+
 app.use(cors({ origin: true }));
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
 
 // routes
 import authRoutes from './routes/auth';

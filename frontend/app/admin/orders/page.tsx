@@ -55,19 +55,10 @@ export default function AdminOrdersPage() {
     setUpdatingId(orderId);
     try {
       const updated = await api.updateOrderStatus(token, orderId, newStatus);
+      // Use the full updated order from the API response
       setOrders(prev =>
         prev.map(o =>
-          o.id === orderId
-            ? {
-                ...o,
-                status: newStatus,
-                confirmedAt: newStatus === 'CONFIRMED' || ORDER_STATUSES.indexOf(newStatus) > ORDER_STATUSES.indexOf('CONFIRMED') ? updated.confirmedAt : o.confirmedAt,
-                preparingAt: newStatus === 'PREPARING' || ORDER_STATUSES.indexOf(newStatus) > ORDER_STATUSES.indexOf('PREPARING') ? updated.preparingAt : o.preparingAt,
-                bakingAt: newStatus === 'BAKING' || ORDER_STATUSES.indexOf(newStatus) > ORDER_STATUSES.indexOf('BAKING') ? updated.bakingAt : o.bakingAt,
-                outForDeliveryAt: newStatus === 'OUT_FOR_DELIVERY' || ORDER_STATUSES.indexOf(newStatus) > ORDER_STATUSES.indexOf('OUT_FOR_DELIVERY') ? updated.outForDeliveryAt : o.outForDeliveryAt,
-                deliveredAt: newStatus === 'DELIVERED' ? updated.deliveredAt : o.deliveredAt,
-              }
-            : o
+          o.id === orderId ? { ...o, ...updated, items: typeof updated.items === 'string' ? JSON.parse(updated.items) : updated.items } : o
         )
       );
     } catch (err: any) {

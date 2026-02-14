@@ -1,15 +1,22 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { authenticate, authorize } from '../middleware/auth';
 import { prisma } from '../db';
 
 const router = Router();
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Multer config for image uploads
 const storage = multer.diskStorage({
   destination: (_req: any, file: any, cb: any) => {
-    cb(null, 'uploads/');
+    cb(null, uploadsDir);
   },
   filename: (req: any, file: any, cb: any) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -171,7 +178,10 @@ router.post('/upload', authenticate, authorize(['ADMIN']), upload.single('image'
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
-  const imageUrl = `/uploads/${req.file.filename}`;
+  // Construct absolute URL
+  const protocol = req.protocol || 'http';
+  const host = req.get('host');
+  const imageUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
   res.json({ imageUrl });
 });
 

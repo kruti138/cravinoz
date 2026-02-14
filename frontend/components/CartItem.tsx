@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, Minus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { normalizeImageUrl } from '@/lib/utils';
 import type { CartItem as CartItemType } from '@/lib/mockData';
 import { toppings } from '@/lib/mockData';
 
@@ -28,13 +29,15 @@ export function CartItem({ item, onQuantityChange, onRemove }: CartItemProps) {
   const selectedToppingNames = toppings
     .filter(t => item.toppings.includes(t.id))
     .map(t => t.name);
+  
+  const imageUrl = normalizeImageUrl(pizza.image);
 
   return (
     <div className="flex gap-4 p-4 bg-card rounded-lg border border-border">
       {/* Image */}
       <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
         <Image
-          src={pizza.image || "/placeholder.svg"}
+          src={imageUrl}
           alt={pizza.name}
           fill
           className="object-cover"

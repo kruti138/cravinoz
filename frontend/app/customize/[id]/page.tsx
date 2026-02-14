@@ -8,6 +8,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { normalizeImageUrl } from '@/lib/utils';
 import { toppings } from '@/lib/mockData';
 import { Plus, Minus, ChevronLeft } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -120,7 +121,7 @@ export default function CustomizePage() {
           <div className="flex flex-col items-center">
             <div className="relative w-full aspect-square max-w-md bg-muted rounded-lg overflow-hidden mb-6">
               <Image
-                src={pizza.image || "/placeholder.svg"}
+                src={normalizeImageUrl(pizza.image)}
                 alt={pizza.name}
                 fill
                 className="object-cover"

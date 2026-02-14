@@ -151,16 +151,28 @@ router.post('/admin/login',
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { email, password } = req.body;
+    console.log('[Admin Login] Email:', email);
     try {
       const user = await prisma.user.findUnique({ where: { email } });
-      if (!user) return res.status(400).json({ message: 'Invalid credentials' });
-      if (user.role !== 'ADMIN') return res.status(403).json({ message: 'Not an admin' });
+      if (!user) {
+        console.log('[Admin Login] User not found:', email);
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+      console.log('[Admin Login] User found:', user.email, 'Role:', user.role);
+      if (user.role !== 'ADMIN') {
+        console.log('[Admin Login] User is not admin:', user.role);
+        return res.status(403).json({ message: 'Not an admin' });
+      }
       const match = await bcrypt.compare(password, user.password);
-      if (!match) return res.status(400).json({ message: 'Invalid credentials' });
+      console.log('[Admin Login] Password match:', match);
+      if (!match) {
+        console.log('[Admin Login] Password mismatch for:', email);
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
       res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
-      console.error(err);
+      console.error('[Admin Login] Error:', err);
       res.status(500).json({ message: 'Server error' });
     }
   }
