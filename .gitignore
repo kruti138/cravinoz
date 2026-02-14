@@ -1,0 +1,103 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# ========================
+# Dependencies
+# ========================
+# Root dependencies
+/node_modules
+
+# Backend dependencies
+backend/node_modules/
+backend/dist/
+backend/build/
+
+# Frontend dependencies  
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# ========================
+# Environment Variables
+# ========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ========================
+# Build Outputs
+# ========================
+/.next/
+/out/
+/build
+backend/dist/
+backend/build/
+
+# ========================
+# Debug Logs
+# ========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+lerna-debug.log*
+
+# ========================
+# Database & Prisma
+# ========================
+# SQLite databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Prisma
+backend/prisma/dev.db
+backend/prisma/prisma/dev.db
+backend/prisma/migrations/
+
+# ========================
+# Uploads
+# ========================
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ========================
+# Testing
+# ========================
+coverage/
+.nyc_output/
+*.coverage
+
+# ========================
+# IDE & Editors
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ========================
+# TypeScript
+# ========================
+*.tsbuildinfo
+next-env.d.ts
+
+# ========================
+# Vercel
+# ========================
+.vercel
+
+# ========================
+# Misc
+# ========================
+*.log
+tmp/
+temp/
