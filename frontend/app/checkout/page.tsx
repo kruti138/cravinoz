@@ -22,6 +22,14 @@ const CardPayment = dynamic(() => import('@/components/CardPayment'), { ssr: fal
 const TAX_RATE = 0.05;
 
 export default function CheckoutPage() {
+  return (
+    <React.Suspense fallback={<main className="min-h-screen bg-background flex items-center justify-center">Loading...</main>}>
+      <CheckoutContent />
+    </React.Suspense>
+  );
+}
+
+function CheckoutContent() {
   const router = useRouter();
   const { cartItems, clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(true);

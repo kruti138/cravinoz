@@ -16,6 +16,14 @@ import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 
 export default function LoginPage() {
+  return (
+    <React.Suspense fallback={<main className="min-h-screen bg-background flex items-center justify-center">Loading...</main>}>
+      <LoginContent />
+    </React.Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
