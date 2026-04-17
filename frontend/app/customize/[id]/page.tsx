@@ -13,6 +13,7 @@ import { toppings } from '@/lib/mockData';
 import { Plus, Minus, ChevronLeft } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useCart } from '@/components/CartProvider';
+import api from '@/lib/api';
 
 type Size = 'small' | 'medium' | 'large';
 type Crust = 'thin' | 'pan' | 'cheese-burst';
@@ -39,8 +40,7 @@ export default function CustomizePage() {
 
   useEffect(() => {
     if (pizzaId) {
-      fetch(`/api/pizzas/${pizzaId}`)
-        .then(res => res.json())
+      api.getPizza(pizzaId)
         .then(setPizza)
         .catch(console.error);
     }

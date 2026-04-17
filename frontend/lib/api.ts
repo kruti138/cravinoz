@@ -4,10 +4,18 @@ async function safeFetch(path: string, opts: RequestInit = {}) {
   const url = API_BASE ? `${API_BASE}${path}` : path;
   try {
     const res = await fetch(url, opts);
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(errorText || `Request failed with status ${res.status}`);
+    }
+    
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return res.json();
+    }
+    throw new Error("Expected JSON response but received something else. Check if the API URL is correct.");
   } catch (err) {
-    // bubble up error to caller; callers may fallback to mock data
+    // bubble up error to caller
     throw err;
   }
 }

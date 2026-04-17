@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { normalizeImageUrl } from '@/lib/utils';
 import type { CartItem as CartItemType } from '@/lib/mockData';
 import { toppings } from '@/lib/mockData';
+import api from '@/lib/api';
 
 interface CartItemProps {
   item: CartItemType;
@@ -18,8 +19,7 @@ export function CartItem({ item, onQuantityChange, onRemove }: CartItemProps) {
   const [pizza, setPizza] = useState<any>(null);
 
   useEffect(() => {
-    fetch(`/api/pizzas/${item.pizzaId}`)
-      .then(res => res.json())
+    api.getPizza(item.pizzaId)
       .then(setPizza)
       .catch(console.error);
   }, [item.pizzaId]);
