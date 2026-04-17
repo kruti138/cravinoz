@@ -16,7 +16,7 @@ const rawOrigin = process.env.FRONTEND_URL?.replace(/\/$/, '') || 'http://localh
 const allowedOrigins = [rawOrigin, 'http://localhost:3000', 'http://localhost:5173'];
 
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // Allow requests with no origin (e.g. curl, Postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
