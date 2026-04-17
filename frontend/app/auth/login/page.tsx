@@ -121,7 +121,7 @@ function LoginContent() {
       const res: any = await api.login({ email: formData.email, password: formData.password });
       // use AuthProvider to store auth and update UI
       auth.login(res.user, res.token);
-      
+
       // Redirect based on user role - admin goes to admin dashboard, user goes to home
       redirectBasedOnRole(res.user.role);
     } catch (err: any) {
@@ -141,7 +141,7 @@ function LoginContent() {
   return (
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar cartCount={0} />
-      
+
       <div className="flex-1 flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-md">
           {/* Header */}
