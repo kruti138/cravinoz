@@ -12,9 +12,17 @@ const PORT = Number(process.env.PORT) || 4000;
 const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
+const rawOrigin = process.env.FRONTEND_URL?.replace(/\/$/, '') || 'http://localhost:3000';
+const allowedOrigins = [rawOrigin, 'http://localhost:3000', 'http://localhost:5173'];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
 }));
 app.use(express.json());
 
@@ -33,8 +41,12 @@ app.use('/api/payments', paymentRoutes);
 app.get('/', (req, res) => res.send({ message: 'Cravinoz Backend' }));
 
 // Initialize Prisma
-prisma.$connect().then(() => {
+prisma.$connect().then(async () => {
   console.log('Database connected');
+  // Sanity check
+  const userCount = await prisma.user.count();
+  console.log(`Verified database: ${userCount} users found.`);
+  
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server listening on ${PORT}`);
   });

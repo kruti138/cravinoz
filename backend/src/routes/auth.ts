@@ -50,7 +50,7 @@ router.post('/register',
       res.json({ message: 'Verification code sent' });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Server error', error: err instanceof Error ? err.message : String(err) });
     }
   }
 );
@@ -81,7 +81,7 @@ router.post('/verify',
       res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Server error', error: err instanceof Error ? err.message : String(err) });
     }
   }
 );
@@ -117,7 +117,7 @@ router.post('/resend',
       res.json({ message: 'Verification code resent' });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Server error', error: err instanceof Error ? err.message : String(err) });
     }
   }
 );
@@ -140,7 +140,7 @@ router.post('/login',
       res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
       console.error(err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Server error', error: err instanceof Error ? err.message : String(err) });
     }
   }
 );
@@ -176,7 +176,7 @@ router.post('/admin/login',
       res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
       console.error('[Admin Login] Error:', err);
-      res.status(500).json({ message: 'Server error' });
+      res.status(500).json({ message: 'Server error', error: err instanceof Error ? err.message : String(err) });
     }
   }
 );
