@@ -32,18 +32,18 @@ const api = {
   resendVerification: (payload: { email: string; }) => safeFetch(`/api/auth/resend`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   login: (payload: { email: string; password: string; }) => safeFetch(`/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   createOrder: (token: string, payload: any) => safeFetch(`/api/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }),
-  createPaymentIntent: async (token: string, payload: { amount: number; currency: string }) => {
-    const response = await fetch(`${API_BASE}/api/payments/create-payment-intent`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error("Failed to create payment intent");
-    return response.json();
-  },
+  createRazorpayOrder: (token: string, payload: { amount: number; currency: string }) => 
+    safeFetch(`/api/payments/create-order`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify(payload) 
+    }),
+  verifyRazorpayPayment: (token: string, payload: any) => 
+    safeFetch(`/api/payments/verify`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+      body: JSON.stringify(payload) 
+    }),
   getUserOrders: (token: string) => safeFetch(`/api/orders/user`, { headers: { 'Authorization': `Bearer ${token}` } }),
   getOrderById: (token: string, orderId: string) => safeFetch(`/api/orders/${orderId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
   uploadImage: (token: string, file: File) => {

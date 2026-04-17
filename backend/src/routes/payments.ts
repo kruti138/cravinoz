@@ -1,33 +1,73 @@
 import { Router } from 'express';
-import Stripe from 'stripe';
 import { authenticate } from '../middleware/auth';
+import { createRazorpayOrder, verifySignature } from '../services/razorpay.service';
+import { prisma } from '../db';
 
 const router = Router();
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecret) {
-  console.warn('STRIPE_SECRET_KEY is not set. Payment routes will fail until configured.');
-}
-
-const stripe = new Stripe(stripeSecret || '', { apiVersion: '2022-11-15' } as any);
-
-// Create a PaymentIntent for the given amount (amount in smallest currency unit, e.g., paise)
-router.post('/create-payment-intent', authenticate, async (req: any, res) => {
+// Create Razorpay Order
+router.post('/create-order', authenticate, async (req: any, res) => {
   try {
-    const { amount, currency = 'inr' } = req.body;
-    if (!amount || typeof amount !== 'number') return res.status(400).json({ message: 'Missing or invalid amount' });
+    const { amount, currency = 'INR' } = req.body;
+    if (!amount || typeof amount !== 'number') {
+      return res.status(400).json({ message: 'Missing or invalid amount' });
+    }
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency,
-      description: 'Order Payment for Cravinoz',
-      metadata: { userId: req.user.id },
+    const order = await createRazorpayOrder(amount, currency);
+    res.json({
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key: process.env.RAZORPAY_KEY_ID
+    });
+  } catch (err: any) {
+    console.error('Razorpay create order error:', err);
+    res.status(500).json({ message: err?.message || 'Razorpay error' });
+  }
+});
+
+// Verify Razorpay Payment and Save Order
+router.post('/verify', authenticate, async (req: any, res) => {
+  try {
+    const { 
+      razorpay_order_id, 
+      razorpay_payment_id, 
+      razorpay_signature,
+      orderData 
+    } = req.body;
+
+    const isValid = verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+
+    if (!isValid) {
+      return res.status(400).json({ message: 'Invalid payment signature' });
+    }
+
+    // Save order in database after successful verification
+    const { items, total, address, phone } = orderData;
+
+    const order = await prisma.order.create({
+      data: {
+        userId: req.user.id,
+        items: JSON.stringify(items),
+        total,
+        address,
+        phone,
+        payment: 'ONLINE',
+        paymentStatus: 'PAID',
+        status: 'PENDING',
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+      },
     });
 
-    res.json({ clientSecret: paymentIntent.client_secret });
+    res.json({ 
+      success: true, 
+      message: 'Payment verified and order placed', 
+      orderId: order.id 
+    });
   } catch (err: any) {
-    console.error('Stripe create payment intent error', err);
-    res.status(500).json({ message: err?.message || 'Stripe error' });
+    console.error('Razorpay verification error:', err);
+    res.status(500).json({ message: 'Internal server error during verification' });
   }
 });
 

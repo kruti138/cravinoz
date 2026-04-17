@@ -9,17 +9,14 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/components/CartProvider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { CartItem as CartItemType } from '@/lib/mockData';
 import {
-  MapPin, Phone, CreditCard, Wallet, Truck, CheckCircle2,
+  MapPin, Phone, CreditCard, Truck, CheckCircle2,
   Loader2, Tag, ShieldCheck, Clock, ChevronRight, X, AlertCircle,
   Banknote, Smartphone
 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
-import dynamic from 'next/dynamic';
 import { toast } from 'sonner';
-
-const CardPayment = dynamic(() => import('@/components/CardPayment'), { ssr: false });
+import Script from 'next/script';
 
 const TAX_RATE = 0.05;
 const DELIVERY_FEE = 0;
@@ -29,8 +26,11 @@ const PROMO_CODES: Record<string, number> = {
   FIRST50: 50,
 };
 
-/* ── Toast Provider ── */
-// Relies on <Toaster /> already in layout; if not, add it there.
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function CheckoutPage() {
   return (
@@ -41,6 +41,10 @@ export default function CheckoutPage() {
         </main>
       }
     >
+      <Script
+        id="razorpay-checkout-js"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+      />
       <CheckoutContent />
     </React.Suspense>
   );
@@ -176,13 +180,6 @@ function CheckoutContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  /* UPI state */
-  const [upiId, setUpiId] = useState('');
-  const [upiVerified, setUpiVerified] = useState(false);
-  const [isVerifyingUpi, setIsVerifyingUpi] = useState(false);
-  const [upiError, setUpiError] = useState('');
-  const [upiRealTimeError, setUpiRealTimeError] = useState('');
-
   /* Promo */
   const [promoInput, setPromoInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; percent: number } | null>(null);
@@ -196,7 +193,7 @@ function CheckoutContent() {
     city: '',
     zipcode: '',
     phone: '',
-    paymentMethod: 'cod',
+    paymentMethod: 'online', // Default to online
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -248,31 +245,6 @@ function CheckoutContent() {
     if (fieldErrors[name]) setFieldErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  /* ── UPI real-time validation ── */
-  const handleUpiChange = (val: string) => {
-    setUpiId(val);
-    setUpiVerified(false);
-    setUpiError('');
-    if (val && !val.includes('@')) {
-      setUpiRealTimeError('UPI ID must contain @  (e.g. name@ybl)');
-    } else {
-      setUpiRealTimeError('');
-    }
-  };
-
-  const handleVerifyUpi = async () => {
-    if (!upiId || !upiId.includes('@')) {
-      setUpiError('Enter a valid UPI ID (e.g. 9876543210@ybl)');
-      return;
-    }
-    setUpiError('');
-    setIsVerifyingUpi(true);
-    await new Promise(r => setTimeout(r, 1600));
-    setIsVerifyingUpi(false);
-    setUpiVerified(true);
-    toast.success('UPI ID verified successfully!');
-  };
-
   /* ── Promo ── */
   const applyPromo = () => {
     const code = promoInput.trim().toUpperCase();
@@ -306,9 +278,81 @@ function CheckoutContent() {
   };
 
   const isFormComplete =
-    formData.name && formData.email && formData.address &&
-    formData.city && formData.zipcode && formData.phone &&
-    (formData.paymentMethod !== 'upi' || upiVerified);
+    !!(formData.name && formData.email && formData.address &&
+    formData.city && formData.zipcode && formData.phone);
+
+  /* ── Razorpay Integration ── */
+  const handleRazorpayPayment = async (token: string) => {
+    try {
+      // 1. Create Razorpay Order on backend
+      const rzpOrder = await api.createRazorpayOrder(token, {
+        amount: total,
+        currency: 'INR'
+      });
+
+      const options = {
+        key: rzpOrder.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: rzpOrder.amount,
+        currency: rzpOrder.currency,
+        name: 'Cravinoz Pizza',
+        description: 'Order Payment',
+        order_id: rzpOrder.id,
+        handler: async (response: any) => {
+          setIsProcessing(true);
+          try {
+            // 2. Verify signature on backend
+            const verifyRes = await api.verifyRazorpayPayment(token, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderData: {
+                items: cartItems,
+                total,
+                address: `${formData.address}, ${formData.city}, ${formData.zipcode}`,
+                phone: formData.phone,
+              }
+            });
+
+            if (verifyRes.success) {
+              clearCart();
+              toast.success('Payment successful! Order placed. 🎉');
+              router.push(`/order-confirmation/${verifyRes.orderId}`);
+            } else {
+              toast.error('Payment verification failed.');
+            }
+          } catch (err: any) {
+            toast.error('Verification error: ' + (err.message || 'Something went wrong'));
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: '#ef4444', // Red-500 (Primary)
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false);
+            toast.info('Payment cancelled');
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        setIsProcessing(false);
+        toast.error('Payment failed: ' + response.error.description);
+      });
+      rzp.open();
+    } catch (err: any) {
+      setIsProcessing(false);
+      toast.error('Failed to initialize payment: ' + (err.message || 'Server error'));
+    }
+  };
 
   /* ── Place order ── */
   const handlePlaceOrder = async () => {
@@ -318,31 +362,33 @@ function CheckoutContent() {
       toast.error('Please fill in all required fields');
       return;
     }
-    if (formData.paymentMethod === 'upi' && !upiVerified) {
-      toast.error('Please verify your UPI ID first');
-      return;
-    }
 
     const token = auth?.token || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
     if (!token) { router.push('/auth/login?next=/checkout'); return; }
 
     setIsProcessing(true);
-    try {
-      const order: any = await api.createOrder(token, {
-        items: cartItems,
-        total,
-        payment: formData.paymentMethod,
-        address: `${formData.address}, ${formData.city}, ${formData.zipcode}`,
-        phone: formData.phone,
-      });
-      if (typeof window !== 'undefined') localStorage.setItem('lastOrder', JSON.stringify(order));
-      clearCart();
-      toast.success('Order placed successfully! 🎉');
-      setTimeout(() => router.push(`/order-confirmation/${order.id}`), 800);
-    } catch (err: any) {
-      toast.error('Failed to place order: ' + (err?.message || 'Server error'));
-    } finally {
-      setIsProcessing(false);
+
+    if (formData.paymentMethod === 'online') {
+      await handleRazorpayPayment(token);
+    } else {
+      // COD Flow
+      try {
+        const order: any = await api.createOrder(token, {
+          items: cartItems,
+          total,
+          payment: 'COD',
+          address: `${formData.address}, ${formData.city}, ${formData.zipcode}`,
+          phone: formData.phone,
+          paymentStatus: 'PENDING'
+        });
+        if (typeof window !== 'undefined') localStorage.setItem('lastOrder', JSON.stringify(order));
+        clearCart();
+        toast.success('Order placed successfully! 🎉');
+        setTimeout(() => router.push(`/order-confirmation/${order.id}`), 800);
+      } catch (err: any) {
+        toast.error('Failed to place order: ' + (err?.message || 'Server error'));
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -491,89 +537,33 @@ function CheckoutContent() {
             <Section icon={<CreditCard className="w-4 h-4" />} title="Payment Method" step={3}>
               <div className="space-y-3">
                 <PaymentCard
+                  id="pay-online"
+                  label="Online Payment (Razorpay)"
+                  desc="UPI (GPay/PhonePe), Card, Netbanking & Wallets"
+                  badge="secure"
+                  icon={<Smartphone className="w-5 h-5" />}
+                  selected={formData.paymentMethod === 'online'}
+                  onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'online' }))}
+                />
+                <PaymentCard
                   id="pay-cod"
                   label="Cash on Delivery"
                   desc="Pay when your order arrives at your door"
-                  badge="popular"
                   icon={<Banknote className="w-5 h-5" />}
                   selected={formData.paymentMethod === 'cod'}
                   onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'cod' }))}
                 />
-                <PaymentCard
-                  id="pay-upi"
-                  label="UPI Payment"
-                  desc="Google Pay, PhonePe, Paytm, BHIM & more"
-                  icon={<Smartphone className="w-5 h-5" />}
-                  selected={formData.paymentMethod === 'upi'}
-                  onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'upi' }))}
-                />
-                <PaymentCard
-                  id="pay-card"
-                  label="Credit / Debit Card"
-                  desc="Visa, Mastercard, RuPay — all cards accepted"
-                  icon={<CreditCard className="w-5 h-5" />}
-                  selected={formData.paymentMethod === 'card'}
-                  onSelect={() => setFormData(p => ({ ...p, paymentMethod: 'card' }))}
-                />
               </div>
 
-              {/* ── UPI input ── */}
-              {formData.paymentMethod === 'upi' && (
-                <div className="mt-5 p-4 rounded-xl border border-border bg-muted/30 space-y-3
+              {/* ── Online info ── */}
+              {formData.paymentMethod === 'online' && (
+                <div className="mt-5 flex items-start gap-3 p-4 rounded-xl border border-blue-200 bg-blue-50/50
                   animate-in fade-in slide-in-from-top-2 duration-200">
-                  <Label className="font-medium text-sm text-foreground">Enter your UPI ID</Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        placeholder="yourname@ybl"
-                        value={upiId}
-                        onChange={e => handleUpiChange(e.target.value)}
-                        disabled={upiVerified || isVerifyingUpi}
-                        className={`pr-10 ${upiRealTimeError ? 'border-red-400' : ''} ${upiVerified ? 'border-green-500 bg-green-50' : ''}`}
-                      />
-                      {upiVerified && (
-                        <CheckCircle2 className="w-5 h-5 text-green-500 absolute right-3 top-1/2 -translate-y-1/2" />
-                      )}
-                    </div>
-                    {!upiVerified ? (
-                      <Button
-                        type="button"
-                        onClick={handleVerifyUpi}
-                        disabled={isVerifyingUpi || !upiId || !!upiRealTimeError}
-                        className="min-w-[90px]"
-                      >
-                        {isVerifyingUpi
-                          ? <><Loader2 className="w-4 h-4 animate-spin mr-1" />Wait</>
-                          : 'Verify'
-                        }
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => { setUpiVerified(false); setUpiId(''); }}
-                        className="border-green-500 text-green-600 hover:bg-green-50"
-                      >
-                        Change
-                      </Button>
-                    )}
+                  <Smartphone className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">Fast & Secure Payments</p>
+                    <p className="text-xs text-blue-700 mt-0.5">Redirecting to Razorpay Checkout. Supports UPI QR, apps, Credit/Debit cards and Netbanking.</p>
                   </div>
-                  {upiRealTimeError && !upiVerified && (
-                    <p className="text-xs text-amber-600 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />{upiRealTimeError}
-                    </p>
-                  )}
-                  {upiError && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{upiError}</p>}
-                  {upiVerified && (
-                    <p className="text-xs text-green-600 flex items-center gap-1 font-medium">
-                      <CheckCircle2 className="w-4 h-4" /> UPI ID verified — ready to pay
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Common formats: <code className="bg-muted px-1 rounded text-xs">1234567890@ybl</code>,{' '}
-                    <code className="bg-muted px-1 rounded text-xs">name@oksbi</code>,{' '}
-                    <code className="bg-muted px-1 rounded text-xs">user@upi</code>
-                  </p>
                 </div>
               )}
 
@@ -586,13 +576,6 @@ function CheckoutContent() {
                     <p className="text-sm font-medium text-green-800">Cash on Delivery selected</p>
                     <p className="text-xs text-green-700 mt-0.5">Please keep exact change ready. Our delivery partner will collect payment.</p>
                   </div>
-                </div>
-              )}
-
-              {/* ── Card form ── */}
-              {formData.paymentMethod === 'card' && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                  <CardPayment cartItems={cartItems} total={total} formData={formData} />
                 </div>
               )}
             </Section>
@@ -735,23 +718,21 @@ function CheckoutContent() {
 
               {/* CTA buttons */}
               <div className="px-6 pb-6 space-y-3">
-                {formData.paymentMethod !== 'card' && (
-                  <Button
-                    id="place-order-btn"
-                    onClick={handlePlaceOrder}
-                    disabled={isProcessing || !isFormComplete || cartItems.length === 0}
-                    size="lg"
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold
-                      disabled:opacity-50 transition-all duration-200 active:scale-[0.98]"
-                  >
-                    {isProcessing ? (
-                      <><Loader2 className="w-5 h-5 animate-spin mr-2" />Processing…</>
-                    ) : (
-                      <>Place Order · ₹{total}</>
-                    )}
-                  </Button>
-                )}
-                {!isFormComplete && formData.paymentMethod !== 'card' && (
+                <Button
+                  id="place-order-btn"
+                  onClick={handlePlaceOrder}
+                  disabled={isProcessing || !isFormComplete || cartItems.length === 0}
+                  size="lg"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-base font-semibold
+                    disabled:opacity-50 transition-all duration-200 active:scale-[0.98]"
+                >
+                  {isProcessing ? (
+                    <><Loader2 className="w-5 h-5 animate-spin mr-2" />Processing…</>
+                  ) : (
+                    <>Place Order · ₹{total}</>
+                  )}
+                </Button>
+                {!isFormComplete && (
                   <p className="text-xs text-muted-foreground text-center">
                     Fill all required fields to enable ordering
                   </p>

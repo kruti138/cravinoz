@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Empty } from '@/components/ui/empty';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty';
 import { ShoppingBag, ChevronRight, RefreshCw } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/components/AuthProvider';
@@ -107,11 +107,17 @@ export default function OrdersPage() {
 
         {orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Empty
-              icon={ShoppingBag}
-              title="No orders yet"
-              description="Start by placing your first order from our menu"
-            />
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <ShoppingBag className="size-6" />
+                </EmptyMedia>
+                <EmptyTitle>No orders yet</EmptyTitle>
+                <EmptyDescription>
+                  Start by placing your first order from our menu
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
             <Button
               onClick={() => router.push('/menu')}
               className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -141,6 +147,16 @@ export default function OrdersPage() {
                             : 'bg-primary/10 text-primary'
                         }`}>
                           {order.status?.replace(/_/g, ' ')}
+                        </span>
+                        <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${
+                          order.paymentStatus === 'PAID'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {order.paymentStatus || 'PENDING'}
+                        </span>
+                        <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                          {order.payment === 'ONLINE' ? '💳 Online' : '💵 COD'}
                         </span>
                       </div>
 
