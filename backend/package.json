@@ -6,8 +6,9 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "prisma generate && tsc -p .",
     "migrate": "npx prisma migrate deploy",
-    "start": "node dist/src/index.js",
     "seed": "ts-node prisma/seed.ts",
+    "setup-prod": "npx prisma migrate deploy && npm run seed",
+    "start": "node dist/src/index.js",
     "postinstall": "prisma generate"
   },
   "prisma": {
