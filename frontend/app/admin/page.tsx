@@ -13,9 +13,10 @@ export default function AdminIndex() {
           <p className="text-muted-foreground mb-6">Use the admin portal to manage pizzas, orders, users and settings.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link href="/admin/pizzas"><Button>Manage Pizzas</Button></Link>
-            <Link href="/admin/orders"><Button>View Orders</Button></Link>
-            <Link href="/admin/users"><Button>Manage Users</Button></Link>
+            <Link href="/admin/pizzas"><Button className="w-full">Manage Pizzas</Button></Link>
+            <Link href="/admin/orders"><Button className="w-full">View Orders</Button></Link>
+            <Link href="/admin/payments"><Button className="w-full">Manage Payments</Button></Link>
+            <Link href="/admin/users"><Button className="w-full">Manage Users</Button></Link>
           </div>
         </div>
       </main>

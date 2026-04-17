@@ -54,6 +54,10 @@ const api = {
 getAdminOrders: (token: string) => safeFetch(`/api/admin/orders`, { headers: { 'Authorization': `Bearer ${token}` } }),
   updateOrderStatus: (token: string, id: string, status: string) => safeFetch(`/api/admin/orders/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status }) }),
   updatePaymentStatus: (token: string, id: string, paymentStatus: string) => safeFetch(`/api/admin/orders/${id}/payment-status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ paymentStatus }) }),
+  getAdminPayments: (token: string, params: { count?: number; skip?: number; status?: string; search?: string } = {}) => {
+    const query = new URLSearchParams(params as any).toString();
+    return safeFetch(`/api/admin/payments?${query}`, { headers: { 'Authorization': `Bearer ${token}` } });
+  },
   getAdminUsers: (token: string) => safeFetch(`/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
   setUserBlock: (token: string, id: string, blocked: boolean) => safeFetch(`/api/admin/users/${id}/block`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ blocked }) }),
 };

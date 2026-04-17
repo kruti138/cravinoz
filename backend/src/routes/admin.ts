@@ -5,6 +5,7 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import { authenticate, authorize } from '../middleware/auth';
 import { prisma } from '../db';
+import { razorpay } from '../services/razorpay.service';
 
 dotenv.config();
 
@@ -214,6 +215,45 @@ router.post('/upload', authenticate, authorize(['ADMIN']), upload.single('image'
   const host = req.get('host');
   const imageUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
   res.json({ imageUrl });
+});
+
+// Razorpay Payments Dashboard
+router.get('/payments', authenticate, authorize(['ADMIN']), async (req: any, res) => {
+  try {
+    const { count = 10, skip = 0, status, search } = req.query;
+    
+    // Fetch from Razorpay
+    const payments = await razorpay.payments.all({
+      count: Number(count),
+      skip: Number(skip),
+    });
+
+    let filtered = payments.items;
+
+    // Filter by status if provided
+    if (status && status !== 'all') {
+      filtered = filtered.filter((p: any) => p.status === status);
+    }
+
+    // Search by ID or Email
+    if (search) {
+      const s = search.toLowerCase();
+      filtered = filtered.filter((p: any) => 
+        p.id.toLowerCase().includes(s) || 
+        (p.email && p.email.toLowerCase().includes(s)) ||
+        (p.contact && p.contact.includes(s))
+      );
+    }
+
+    res.json({
+      items: filtered,
+      count: filtered.length,
+      total: payments.count // This is the count in the current window from Razorpay
+    });
+  } catch (err) {
+    console.error('Razorpay Fetch Error:', err);
+    res.status(500).json({ message: 'Failed to fetch payments', error: err instanceof Error ? err.message : String(err) });
+  }
 });
 
 export default router;
