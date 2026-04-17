@@ -10,7 +10,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div>
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <span className="text-2xl">🍕</span> PizzaHub
+              <span className="text-2xl">🍕</span> Cravinoz
             </h3>
             <p className="text-sm opacity-90">
               Delicious pizzas delivered fresh to your door.
@@ -38,7 +38,7 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Contact</h4>
             <p className="text-sm mb-2">📞 +1 (800) 555-PIZZA</p>
-            <p className="text-sm mb-4">✉️ hello@pizzahub.com</p>
+            <p className="text-sm mb-4">✉️ hello@cravinoz.com</p>
             <div className="flex gap-4">
               <Facebook className="w-5 h-5 hover:opacity-70 cursor-pointer" />
               <Twitter className="w-5 h-5 hover:opacity-70 cursor-pointer" />
@@ -48,7 +48,7 @@ export function Footer() {
         </div>
         
         <div className="border-t border-secondary-foreground/20 pt-8 text-center text-sm opacity-75">
-          <p>&copy; 2024 PizzaHub. All rights reserved.</p>
+          <p>&copy; 2024 Cravinoz. All rights reserved.</p>
         </div>
       </div>
     </footer>

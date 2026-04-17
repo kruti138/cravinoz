@@ -12,6 +12,7 @@ import { normalizeImageUrl } from '@/lib/utils';
 import { toppings } from '@/lib/mockData';
 import { Plus, Minus, ChevronLeft } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useCart } from '@/components/CartProvider';
 
 type Size = 'small' | 'medium' | 'large';
 type Crust = 'thin' | 'pan' | 'cheese-burst';
@@ -34,7 +35,7 @@ export default function CustomizePage() {
   const pizzaId = params.id as string;
 
   const [pizza, setPizza] = useState<any>(null);
-  const [cartCount] = useState(0);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     if (pizzaId) {
@@ -54,7 +55,7 @@ export default function CustomizePage() {
   if (!pizza) {
     return (
       <main className="min-h-screen bg-background">
-        <Navbar cartCount={cartCount} />
+        <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
           <p className="text-lg text-muted-foreground">Pizza not found</p>
           <Button
@@ -86,8 +87,6 @@ export default function CustomizePage() {
   };
 
   const handleAddToCart = () => {
-    // Store in localStorage for now
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const cartItem = {
       id: `${pizza.id}-${Date.now()}`,
       pizzaId: pizza.id,
@@ -97,15 +96,13 @@ export default function CustomizePage() {
       quantity,
       customizationPrice: basePrice,
     };
-    cart.push(cartItem);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    
+    addToCart(cartItem);
     router.push('/cart');
   };
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar cartCount={cartCount} />
+      <Navbar />
       
       <div className="max-w-6xl mx-auto px-4 py-8">
         <button

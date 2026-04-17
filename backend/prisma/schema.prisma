@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
 
 // Models adapted for SQLite provider.
@@ -17,14 +17,13 @@ model User {
   verified  Boolean  @default(false)
   blocked   Boolean  @default(false)
   orders    Order[]  @relation("UserOrders")
-  addresses String   @default("[]") // JSON string for array of strings
+  addresses String   @default("[]")
   phone     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("users")
 }
-
-// ensure the inverse relation is defined on Order (see below)
-
 
 model Pizza {
   id          String   @id @default(cuid())
@@ -32,25 +31,26 @@ model Pizza {
   description String
   image       String?
   basePrice   Int
-  sizes       String   // JSON string: { small: 199, medium: 299, large: 399 }
-  toppings    String   // JSON string: array of topping objects
+  sizes       String
+  toppings    String
   category    String
   popular     Boolean  @default(false)
   available   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("pizzas")
 }
 
 model Order {
   id        String    @id @default(cuid())
   user      User      @relation("UserOrders", fields: [userId], references: [id])
   userId    String
-  items     String   // JSON string
+  items     String
   total     Int
   payment   String
-  // Status flow: PENDING -> CONFIRMED -> PREPARING -> BAKING -> OUT_FOR_DELIVERY -> DELIVERED or CANCELLED
+  paymentStatus String @default("PENDING")
   status    String   @default("PENDING")
-  // Timestamps for each status transition
   confirmedAt DateTime?
   preparingAt DateTime?
   bakingAt DateTime?
@@ -61,6 +61,8 @@ model Order {
   phone     String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+
+  @@map("orders")
 }
 
 model Coupon {
@@ -70,6 +72,8 @@ model Coupon {
   expiry    DateTime
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  @@map("coupons")
 }
 
 model EmailVerification {
@@ -78,6 +82,8 @@ model EmailVerification {
   codeHash  String
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@map("emailverifications")
 }
 
 

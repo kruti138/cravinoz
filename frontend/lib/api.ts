@@ -12,80 +12,42 @@ async function safeFetch(path: string, opts: RequestInit = {}) {
   }
 }
 
-export async function getPizzas() {
-  return safeFetch('/api/pizzas');
-}
+const api = {
+  getPizzas: () => safeFetch('/api/pizzas'),
+  getPizza: (id: string) => safeFetch(`/api/pizzas/${id}`),
+  adminLogin: (payload: { email: string; password: string; }) => safeFetch(`/api/auth/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  createPizza: (token: string, payload: any) => safeFetch(`/api/admin/pizzas`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }),
+  updatePizza: (token: string, id: string, payload: any) => safeFetch(`/api/admin/pizzas/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }),
+  deletePizza: (token: string, id: string) => safeFetch(`/api/admin/pizzas/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }),
+  register: (payload: { name: string; email: string; password: string; }) => safeFetch(`/api/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  verifyEmail: (payload: { email: string; code: string; }) => safeFetch(`/api/auth/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  resendVerification: (payload: { email: string; }) => safeFetch(`/api/auth/resend`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  login: (payload: { email: string; password: string; }) => safeFetch(`/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  createOrder: (token: string, payload: any) => safeFetch(`/api/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }),
+  createPaymentIntent: async (token: string, payload: { amount: number; currency: string }) => {
+    const response = await fetch(`${API_BASE}/api/payments/create-payment-intent`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error("Failed to create payment intent");
+    return response.json();
+  },
+  getUserOrders: (token: string) => safeFetch(`/api/orders/user`, { headers: { 'Authorization': `Bearer ${token}` } }),
+  getOrderById: (token: string, orderId: string) => safeFetch(`/api/orders/${orderId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+  uploadImage: (token: string, file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return safeFetch(`/api/admin/upload`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
+  },
+getAdminOrders: (token: string) => safeFetch(`/api/admin/orders`, { headers: { 'Authorization': `Bearer ${token}` } }),
+  updateOrderStatus: (token: string, id: string, status: string) => safeFetch(`/api/admin/orders/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status }) }),
+  updatePaymentStatus: (token: string, id: string, paymentStatus: string) => safeFetch(`/api/admin/orders/${id}/payment-status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ paymentStatus }) }),
+  getAdminUsers: (token: string) => safeFetch(`/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }),
+  setUserBlock: (token: string, id: string, blocked: boolean) => safeFetch(`/api/admin/users/${id}/block`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ blocked }) }),
+};
 
-export async function getPizza(id: string) {
-  return safeFetch(`/api/pizzas/${id}`);
-}
-
-export async function adminLogin(payload: { email: string; password: string; }) {
-  return safeFetch(`/api/auth/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-}
-
-export async function createPizza(token: string, payload: any) {
-  return safeFetch(`/api/admin/pizzas`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
-}
-
-export async function updatePizza(token: string, id: string, payload: any) {
-  return safeFetch(`/api/admin/pizzas/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
-}
-
-export async function deletePizza(token: string, id: string) {
-  return safeFetch(`/api/admin/pizzas/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-}
-
-export async function register(payload: { name: string; email: string; password: string; }) {
-  return safeFetch(`/api/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-}
-
-export async function verifyEmail(payload: { email: string; code: string; }) {
-  return safeFetch(`/api/auth/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-}
-
-export async function resendVerification(payload: { email: string; }) {
-  return safeFetch(`/api/auth/resend`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-}
-
-export async function login(payload: { email: string; password: string; }) {
-  return safeFetch(`/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-}
-
-export async function createOrder(token: string, payload: any) {
-  return safeFetch(`/api/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) });
-}
-
-export async function getUserOrders(token: string) {
-  return safeFetch(`/api/orders/user`, { headers: { 'Authorization': `Bearer ${token}` } });
-}
-
-// Get single order for real-time updates
-export async function getOrderById(token: string, orderId: string) {
-  return safeFetch(`/api/orders/${orderId}`, { headers: { 'Authorization': `Bearer ${token}` } });
-}
-
-export async function uploadImage(token: string, file: File) {
-  const formData = new FormData();
-  formData.append('image', file);
-  return safeFetch(`/api/admin/upload`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData });
-}
-
-// Admin order & user APIs
-export async function getAdminOrders(token: string) {
-  return safeFetch(`/api/admin/orders`, { headers: { 'Authorization': `Bearer ${token}` } });
-}
-
-export async function updateOrderStatus(token: string, id: string, status: string) {
-  return safeFetch(`/api/admin/orders/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status }) });
-}
-
-export async function getAdminUsers(token: string) {
-  return safeFetch(`/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } });
-}
-
-export async function setUserBlock(token: string, id: string, blocked: boolean) {
-  return safeFetch(`/api/admin/users/${id}/block`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ blocked }) });
-}
-
-export default { getPizzas, getPizza, register, verifyEmail, resendVerification, login, createOrder, getUserOrders, getOrderById, adminLogin, createPizza, updatePizza, deletePizza, uploadImage, getAdminOrders, updateOrderStatus, getAdminUsers, setUserBlock };
+export default api;

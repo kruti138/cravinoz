@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { useCart } from '@/components/CartProvider';
 import { CartItem } from '@/components/CartItem';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -14,30 +15,19 @@ const TAX_RATE = 0.05;
 
 export default function CartPage() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState<CartItemType[]>([]);
+  const { cartItems, updateQuantity, removeFromCart } = useCart();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load cart from localStorage
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
     setIsLoading(false);
   }, []);
 
   const handleQuantityChange = (id: string, quantity: number) => {
-    const updated = cartItems.map(item =>
-      item.id === id ? { ...item, quantity } : item
-    );
-    setCartItems(updated);
-    localStorage.setItem('cart', JSON.stringify(updated));
+    updateQuantity(id, quantity);
   };
 
   const handleRemove = (id: string) => {
-    const updated = cartItems.filter(item => item.id !== id);
-    setCartItems(updated);
-    localStorage.setItem('cart', JSON.stringify(updated));
+    removeFromCart(id);
   };
 
   const subtotal = cartItems.reduce(
@@ -73,11 +63,11 @@ export default function CartPage() {
 
         {cartItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Empty
-              icon={ShoppingCart}
-              title="Your cart is empty"
-              description="Start by adding some delicious pizzas from our menu"
-            />
+            <div className="text-center mb-6">
+              <ShoppingCart className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">Your cart is empty</h3>
+              <p className="text-muted-foreground">Start by adding some delicious pizzas from our menu</p>
+            </div>
             <Button
               onClick={() => router.push('/menu')}
               className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground"

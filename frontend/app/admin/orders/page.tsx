@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 
 const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PREPARING', 'BAKING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
+const PAYMENT_STATUSES = ['PENDING', 'COMPLETED', 'FAILED'];
 
 export default function AdminOrdersPage() {
   const router = useRouter();
@@ -50,7 +51,7 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const changeStatus = async (orderId: string, newStatus: string) => {
+const changeStatus = async (orderId: string, newStatus: string) => {
     if (!token) return setError('Not authorized');
     setUpdatingId(orderId);
     try {
@@ -64,6 +65,24 @@ export default function AdminOrdersPage() {
     } catch (err: any) {
       console.error(err);
       setError('Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const changePaymentStatus = async (orderId: string, newPaymentStatus: string) => {
+    if (!token) return setError('Not authorized');
+    setUpdatingId(orderId);
+    try {
+      const updated = await api.updatePaymentStatus(token, orderId, newPaymentStatus);
+      setOrders(prev =>
+        prev.map(o =>
+          o.id === orderId ? { ...o, ...updated, items: typeof updated.items === 'string' ? JSON.parse(updated.items) : updated.items } : o
+        )
+      );
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to update payment status');
     } finally {
       setUpdatingId(null);
     }
@@ -156,6 +175,7 @@ export default function AdminOrdersPage() {
                       <div>
                         <label className="block text-sm font-semibold mb-2">Update Status:</label>
                         <select
+                          aria-label="Update order status"
                           value={order.status}
                           onChange={(e) => changeStatus(order.id, e.target.value)}
                           disabled={updatingId === order.id}
@@ -198,11 +218,34 @@ export default function AdminOrdersPage() {
                               <p className="text-xs text-muted-foreground mt-1">Phone: {order.phone || 'N/A'}</p>
                             </div>
                           </div>
-                          <div>
+<div>
                             <h4 className="font-semibold mb-2">💳 Payment</h4>
-                            <div className="bg-white p-3 rounded border border-border text-sm">
+                            <div className="bg-white p-3 rounded border border-border text-sm space-y-2">
                               <p>Method: {order.payment || 'N/A'}</p>
                               <p>Total: ₹{order.total}</p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium">Status:</span>
+                                <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                  order.paymentStatus === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                                  order.paymentStatus === 'FAILED' ? 'bg-red-100 text-red-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {order.paymentStatus || 'PENDING'}
+                                </span>
+                              </div>
+                              <select
+                                id={`payment-status-${order.id}`}
+                                aria-label="Change payment status"
+                                title="Change payment status"
+                                value={order.paymentStatus || 'PENDING'}
+                                onChange={(e) => changePaymentStatus(order.id, e.target.value)}
+                                disabled={updatingId === order.id}
+                                className="w-full mt-2 px-2 py-1 text-xs border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              >
+                                {PAYMENT_STATUSES.map(status => (
+                                  <option key={status} value={status}>{status}</option>
+                                ))}
+                              </select>
                             </div>
                           </div>
                         </div>

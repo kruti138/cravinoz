@@ -10,7 +10,7 @@ export const ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PREPARING', 'BAKING', 'O
 // Create order
 router.post('/', authenticate, async (req: any, res) => {
   try {
-    const { items, total, payment, address, phone } = req.body;
+    const { items, total, payment, address, phone, paymentStatus } = req.body;
     if (!items || !total || !address || !phone) return res.status(400).json({ message: 'Missing fields' });
     const order = await prisma.order.create({
       data: {
@@ -18,6 +18,7 @@ router.post('/', authenticate, async (req: any, res) => {
         items: JSON.stringify(items),
         total,
         payment,
+        paymentStatus: paymentStatus || 'PENDING',
         address,
         phone,
         status: 'PENDING',

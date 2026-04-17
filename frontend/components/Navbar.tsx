@@ -6,12 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import { useCart } from '@/components/CartProvider';
 
 interface NavbarProps {
   cartCount?: number;
 }
 
-export function Navbar({ cartCount = 0 }: NavbarProps) {
+export function Navbar({ cartCount: _ignored = 0 }: NavbarProps = {}) {
+  const { cartCount } = (() => {
+    try { return useCart(); } catch (e) { return { cartCount: 0 }; }
+  })();
   const auth = (() => {
     try {
       return useAuth();
@@ -30,7 +34,7 @@ export function Navbar({ cartCount = 0 }: NavbarProps) {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
             🍕
           </div>
-          <span>PizzaHub</span>
+          <span>Cravinoz</span>
         </Link>
         
         <div className="hidden md:flex items-center gap-6">

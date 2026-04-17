@@ -2,8 +2,11 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import dotenv from 'dotenv';
 import { authenticate, authorize } from '../middleware/auth';
 import { prisma } from '../db';
+
+dotenv.config();
 
 const router = Router();
 
@@ -37,6 +40,34 @@ router.get('/orders', authenticate, authorize(['ADMIN']), async (req, res) => {
       items: JSON.parse(order.items),
     }));
     res.json(parsedOrders);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update payment status
+router.put('/orders/:id/payment-status', authenticate, authorize(['ADMIN']), async (req: any, res) => {
+  try {
+    const { paymentStatus } = req.body;
+    const validStatuses = ['PENDING', 'COMPLETED', 'FAILED'];
+    
+    if (!validStatuses.includes(paymentStatus)) {
+      return res.status(400).json({ message: 'Invalid payment status' });
+    }
+
+    const updated = await prisma.order.update({
+      where: { id: req.params.id },
+      data: { paymentStatus: paymentStatus, updatedAt: new Date() },
+      include: { user: true }
+    });
+    
+    const parsedOrder = {
+      ...updated,
+      items: JSON.parse(updated.items),
+    };
+    
+    res.json(parsedOrder);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

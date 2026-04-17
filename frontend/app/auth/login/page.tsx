@@ -142,10 +142,10 @@ export default function LoginPage() {
               🍕
             </div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Welcome Back
+              Welcome to Cravinoz
             </h1>
             <p className="text-muted-foreground">
-              Sign in to your PizzaHub account
+              Sign in to your Cravinoz account
             </p>
           </div>
 
@@ -215,7 +215,7 @@ export default function LoginPage() {
           {/* Demo Info */}
           <div className="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/20">
             <p className="text-sm text-muted-foreground">
-              <strong>Demo Note:</strong> Use any email and password to log in. Your session is stored locally.
+              <strong>Demo Note:</strong> Use <code>user@pizzahub.com</code> (password: <code>userpass123</code>) to log in.
             </p>
           </div>
 

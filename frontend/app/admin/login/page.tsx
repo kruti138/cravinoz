@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
     <main className="min-h-screen bg-background flex items-center justify-center">
       <div className="max-w-md w-full px-4 py-12 bg-card rounded-lg shadow-lg border-2 border-primary">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">🍕 PizzaHub Admin</h1>
+          <h1 className="text-3xl font-bold mb-2">🍕 Cravinoz Admin</h1>
           <p className="text-muted-foreground text-sm">Admin Portal - Restricted Access</p>
         </div>
         
@@ -79,7 +79,7 @@ export default function AdminLoginPage() {
         </form>
         
         <div className="mt-6 pt-6 border-t text-center text-sm text-muted-foreground">
-          <p className="text-xs">Admin credentials required</p>
+          <p className="text-xs">Admin credentials required (<code>adminpass</code>)</p>
           <p className="mt-3"><a href="/" className="text-primary hover:underline font-medium">← Back to Home</a></p>
         </div>
       </div>

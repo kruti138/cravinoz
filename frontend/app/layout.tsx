@@ -8,7 +8,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'PizzaHub - Order Fresh Pizzas Online',
+  title: 'Cravinoz - Order Pizza Online',
   description: 'Order delicious, fresh pizzas with fast delivery. Browse our menu, customize your pizza, and get it delivered to your door.',
   generator: 'v0.app',
   viewport: {
@@ -37,6 +37,7 @@ export const metadata: Metadata = {
 }
 
 import { AuthProvider } from '@/components/AuthProvider';
+import { CartProvider } from '@/components/CartProvider';
 
 export default function RootLayout({
   children,
@@ -47,7 +48,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased`}>
         <AuthProvider>
-          {children}
+          <CartProvider>
+            {children}
+          </CartProvider>
         </AuthProvider>
         <Analytics />
       </body>

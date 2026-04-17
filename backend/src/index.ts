@@ -12,7 +12,10 @@ const PORT = Number(process.env.PORT) || 4000;
 const uploadsPath = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
-app.use(cors({ origin: true }));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*",
+  credentials: true
+}));
 app.use(express.json());
 
 // routes
@@ -20,13 +23,14 @@ import authRoutes from './routes/auth';
 import pizzaRoutes from './routes/pizzas';
 import orderRoutes from './routes/orders';
 import adminRoutes from './routes/admin';
+import paymentRoutes from './routes/payments';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pizzas', pizzaRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
-
-app.get('/', (req, res) => res.send({ message: 'Pizza Ordering Backend' }));
+app.use('/api/payments', paymentRoutes);
+app.get('/', (req, res) => res.send({ message: 'Cravinoz Backend' }));
 
 // Initialize Prisma
 prisma.$connect().then(() => {

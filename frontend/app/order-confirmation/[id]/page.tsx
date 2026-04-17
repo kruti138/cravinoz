@@ -50,7 +50,7 @@ export default function OrderConfirmationPage() {
             Order Confirmed!
           </h1>
           <p className="text-lg text-muted-foreground">
-            Your order has been successfully placed and is being prepared.
+            Your Cravinoz order is confirmed 🍕 and is being prepared.
           </p>
         </div>
 

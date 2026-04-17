@@ -18,15 +18,28 @@ export default function MenuPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price-low' | 'price-high'>('popular');
+
   useEffect(() => {
     setLoading(true);
-    api.getPizzas().then((data: any) => setPizzasData(data)).catch((err: any) => { console.error(err); setError('Failed to load pizzas'); }).finally(() => setLoading(false));
+    api.getPizzas()
+      .then((data: any) => {
+        setPizzasData(data);
+        if (data.length > 0) {
+          const prices = data.map((p: any) => p.price);
+          setPriceRange([Math.min(...prices), Math.max(...prices)]);
+        } else {
+          setPriceRange([0, 1000]);
+        }
+      })
+      .catch((err: any) => { 
+        console.error(err); 
+        setError('Failed to load pizzas'); 
+      })
+      .finally(() => setLoading(false));
   }, []);
-
-  // Filters
-  const [categoryFilter, setCategoryFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
-  const [priceRange, setPriceRange] = useState([249, 399]);
-  const [sortBy, setSortBy] = useState<'popular' | 'rating' | 'price-low' | 'price-high'>('popular');
 
   // Apply filters and sorting
   const filteredPizzas = useMemo(() => {
@@ -54,8 +67,9 @@ export default function MenuPage() {
     router.push(`/customize/${pizzaId}`);
   };
 
-  const minPrice = pizzasData.length > 0 ? Math.min(...pizzasData.map((p: any) => p.price)) : 0;
-  const maxPrice = pizzasData.length > 0 ? Math.max(...pizzasData.map((p: any) => p.price)) : 0;
+  const prices = pizzasData.map((p: any) => p.price);
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 1000;
 
   return (
     <main className="min-h-screen bg-background">

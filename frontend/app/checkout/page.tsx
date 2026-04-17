@@ -8,20 +8,42 @@ import { Navbar } from '@/components/Navbar';
 import api from '@/lib/api';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
+import { useCart } from '@/components/CartProvider';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import type { CartItem as CartItemType } from '@/lib/mockData';
 import { MapPin, Phone, CreditCard } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
+import dynamic from 'next/dynamic';
+
+const CardPayment = dynamic(() => import('@/components/CardPayment'), { ssr: false });
 
 const TAX_RATE = 0.05;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState<CartItemType[]>([]);
+  const { cartItems, clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const [upiId, setUpiId] = useState('');
+  const [upiVerified, setUpiVerified] = useState(false);
+  const [isVerifyingUpi, setIsVerifyingUpi] = useState(false);
+  const [upiError, setUpiError] = useState('');
+
+  const handleVerifyUpi = async () => {
+    if (!upiId || !upiId.includes('@')) {
+      setUpiError('Please enter a valid UPI ID (e.g., name@ybl)');
+      return;
+    }
+    setUpiError('');
+    setIsVerifyingUpi(true);
+    // Simulate verification delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setIsVerifyingUpi(false);
+    setUpiVerified(true);
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -38,11 +60,6 @@ export default function CheckoutPage() {
   const auth = useAuth();
 
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
-
     // If not logged in, redirect to login (with next param) — enforce auth for checkout
     const token = auth?.token || localStorage.getItem('token');
     if (!token) {
@@ -57,9 +74,9 @@ export default function CheckoutPage() {
     if (auth?.user) {
       setFormData(prev => ({
         ...prev,
-        name: auth.user.name || prev.name,
-        email: auth.user.email || prev.email,
-        phone: auth.user.phone || prev.phone,
+        name: auth.user?.name || prev.name,
+        email: auth.user?.email || prev.email,
+        phone: auth.user?.phone || prev.phone,
       }));
     } else {
       // Try to load user from localStorage fallback
@@ -93,6 +110,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (formData.paymentMethod === 'upi' && !upiVerified) {
+      alert('Please verify your UPI ID first.');
+      return;
+    }
+
     const token = auth?.token || localStorage.getItem('token');
     if (!token) {
       // force login flow
@@ -113,7 +135,7 @@ export default function CheckoutPage() {
     try {
       const order: any = await api.createOrder(token, payload);
       localStorage.setItem('lastOrder', JSON.stringify(order));
-      localStorage.setItem('cart', '[]');
+      clearCart();
       router.push(`/order-confirmation/${order.id}`);
     } catch (err: any) {
       console.error(err);
@@ -264,7 +286,40 @@ export default function CheckoutPage() {
                     UPI
                   </Label>
                 </div>
+                <div className="flex items-center space-x-2 p-4 rounded-lg border border-border hover:bg-muted transition-colors cursor-pointer mt-2">
+                  <RadioGroupItem value="card" id="card" />
+                  <Label htmlFor="card" className="cursor-pointer font-medium text-foreground">
+                    Card Payment
+                  </Label>
+                </div>
               </RadioGroup>
+              {formData.paymentMethod === 'card' && (
+                <CardPayment cartItems={cartItems} total={total} formData={formData} />
+              )}
+              {formData.paymentMethod === 'upi' && (
+                <div className="mt-4 p-4 border border-border rounded-lg bg-muted/30">
+                  <Label className="text-foreground">Enter UPI ID</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      type="text"
+                      placeholder="e.g. 9876543210@ybl"
+                      value={upiId}
+                      onChange={(e) => { setUpiId(e.target.value); setUpiVerified(false); }}
+                      disabled={upiVerified || isVerifyingUpi}
+                    />
+                    {!upiVerified ? (
+                      <Button type="button" onClick={handleVerifyUpi} disabled={isVerifyingUpi || !upiId}>
+                        {isVerifyingUpi ? 'Verifying...' : 'Verify'}
+                      </Button>
+                    ) : (
+                      <Button type="button" disabled variant="outline" className="border-green-500 text-green-600 bg-green-50 text-sm whitespace-nowrap">
+                        Verified ✓
+                      </Button>
+                    )}
+                  </div>
+                  {upiError && <p className="text-sm text-red-500 mt-2">{upiError}</p>}
+                </div>
+              )}
             </div>
           </div>
 
